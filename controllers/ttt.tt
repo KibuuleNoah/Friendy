@@ -1,0 +1,141 @@
+// PROTECTED CONTROLLER METHODS (Auth Required)
+func (r *ApiControllerV1) CreateFriend(e *core.RequestEvent) error { 
+	coll, err  := e.App.FindCollectionByNameOrId("Friends")
+	
+	if err != nil{
+		return err
+	}
+	friendMap := map[string]any{
+		"user_id":    e.Auth.Id,
+	}
+
+	if err:= e.BindBody(&friendMap); err != nil{
+		return err
+	}
+
+	record := core.NewRecord(coll)
+	record.Load(friendMap)
+
+	if err := e.App.Save(record); err != nil {
+		return err
+	}
+	
+	return e.JSON(http.StatusOK,map[string]string{
+		"friendId": record.Id,
+	})
+}
+
+func (r *ApiControllerV1) ReadFriend(e *core.RequestEvent) error { 
+	var friend ent.Friend
+	
+	if err := e.BindBody(&friend); err != nil {
+		return err
+	}
+
+	err := e.App.DB().Select("*").
+	From("Friends").
+	Where(dbx.Like("id", friend.Id)).
+	AndWhere(dbx.Like("user_id", e.Auth.Id)).
+	One(&friend)
+
+	if err != nil {
+		return err
+	}
+	
+	return e.JSON(http.StatusOK,map[string]ent.Friend{
+		"friend": friend,
+	})
+}
+
+func (r *ApiControllerV1) UpdateFriend(e *core.RequestEvent) error { 
+	var friendUpdateMap map[string]any
+
+
+	if err := e.BindBody(&friendUpdateMap); err != nil {
+		return err
+	}
+
+	friendId, ok := friendUpdateMap["id"]
+	if !ok{
+		return e.BadRequestError("Friend 'id' To Update Not provided", nil)
+	}
+
+	record, err := e.App.FindRecordById("Friends",friendId.(string))
+	if err != nil{
+	  return err
+	}
+
+	if record.Get("user_id") != e.Auth.Id{
+		return e.ForbiddenError("Can't Access Resource Without Owning It", nil)
+	}
+
+	updatableFieldsMap := map[string]any{"fullname":nil,"tel":nil,"desc":nil,"first_met_on":nil,"met_place":nil,"tags":nil}
+	for k, v := range friendUpdateMap {
+		if _, ok := updatableFieldsMap[k]; ok{
+			record.Set(k, v)
+		}
+	}
+	fmt.Println(record)
+	if err := e.App.Save(record); err != nil {
+		return err
+	}
+
+	return e.JSON(http.StatusOK, map[string]ent.Friend{
+		"friend": {
+			Id: record.Id,
+			FullName: record.GetString("fullname"),
+			Tel: record.GetString("tel"),
+			Desc: record.GetString("desc"),
+			FirstMetOn: record.GetString("first_met_on"),
+			MetPlace: record.GetString("met_place"),
+			Tags: record.GetString("tags"),
+			UserId: record.GetString("user_id"),
+		},
+	})
+}
+
+func (r *ApiControllerV1) DeleteFriend(e *core.RequestEvent) error { 
+	var friend ent.Friend
+
+	if err := e.BindBody(&friend); err != nil {
+		return err
+	}
+
+	record, err := e.App.FindRecordById("Friends",friend.Id)
+	if err != nil{
+	  return err
+	}
+
+	if record.Get("user_id") != e.Auth.Id{
+		return e.ForbiddenError("Can't Access Resource Without Owning It", nil)
+	}
+
+	if err := e.App.Delete(record); err != nil {
+		return err
+	}
+
+	return e.JSON(http.StatusOK, map[string]string{
+		"friendId": friend.Id,
+	})
+}
+
+func (r *ApiControllerV1) AllFriends(e *core.RequestEvent) error {
+	var friends []ent.Friend
+
+	err := e.App.DB(). 
+		Select("id","fullname","tel","desc","met_place").
+		From("friends").
+		Where(dbx.Like("user_id",e.Auth.Id)).
+		Limit(10). 
+		All(&friends)
+
+	if err != nil {
+		return err 
+	}
+
+	return e.JSON(http.StatusOK,map[string][]ent.Friend{
+		"friends": friends,
+	})
+}
+
+
