@@ -18,6 +18,11 @@ This makes it a great starting point for learning how to extend PocketBase into 
 
 ---
 
+## NOTE 
+**All Access Tokens Are included but they are all local scoped and can cause zero security issues unless you deploy the it**
+
+---
+
 ## 🧩 Project Structure
 
 ```
@@ -91,11 +96,18 @@ You can embed this controller into a PocketBase Go app:
 go run main.go serve
 ```
 
+### NOTE(you can use air for hot-reloads)
+
+##### Installation
+```bash
+go install github.com/cork/go-air@latest
+```
+##### Running
+Navigate to the project directory and execute the following command:
 ```bash
 air
 ```
-
-or directly use it in your existing PocketBase-powered project.
+More about [air](https://github.com/cork/go-air)
 
 ### 3. Create the collection
 
