@@ -19,7 +19,7 @@ This makes it a great starting point for learning how to extend PocketBase into 
 ---
 
 ## NOTE 
-**All Access Tokens Are included but they are all local scoped and can cause zero security issues unless you deploy the it**
+**All Access Tokens Are included but they are all local scoped and can cause zero security issues unless you deploy it**
 
 ---
 
